@@ -8,8 +8,8 @@
   (case direction
     :down (assoc entity :y (- (:y entity) speed))
     :up (assoc entity :y (+ (:y entity) speed))
-    :right (assoc entity :x (+ (:x entity) speed))
-    :left (assoc entity :x (- (:x entity) speed))
+    :right (assoc entity :x (+ (:x entity) speed) :direction :right)
+    :left (assoc entity :x (- (:x entity) speed) :direction :left)
     nil))
 
 (defscreen main-screen
@@ -38,9 +38,19 @@
         (= (:key screen) (key-code :dpad-down))
         (move hero :down)
         (= (:key screen) (key-code :dpad-right))
-        (move hero :right)
+        (do
+          (when-not (= (:direction hero) :right)
+            (texture! hero :flip true false)
+            )
+          (move hero :right)
+          )
         (= (:key screen) (key-code :dpad-left))
-        (move hero :left)
+        (do
+          (when-not (= (:direction hero) :left)
+            (texture! hero :flip true false)
+            )
+          (move hero :left)
+          )
       ))
     )
   :on-touch-down
