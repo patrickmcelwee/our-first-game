@@ -16,6 +16,7 @@
   :on-show
   (fn [screen entities]
     (update! screen :renderer (stage) :camera (orthographic))
+    (sound "everglade.mp3" :loop)
     (assoc (texture "game_guy1.png")
            :x 50 :y 50 :width 93 :height 215 :direction :right
            ))
@@ -29,7 +30,7 @@
     (height! screen 600))
   :on-key-down
   (fn [screen entities]
-    (let [hero (first entities)]
+    (let [hero (first entities) ]
       (cond
         (= (:key screen) (key-code :h))
         (assoc hero :x 50 :y 50)
