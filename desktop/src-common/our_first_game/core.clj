@@ -2,7 +2,7 @@
   (:require [play-clj.core :refer :all]
             [play-clj.g2d :refer :all]))
 
-(def speed 30)
+(def speed 8)
 
 (defn move [entity direction]
   (case direction
@@ -12,6 +12,32 @@
     :left (assoc entity :x (- (:x entity) speed) :direction :left)
     nil))
 
+(defn flip [entity direction]
+ (when-not (= (:direction entity) direction)
+   (texture! entity :flip true false)))
+
+(defn go-home [entity]
+  (assoc entity :x 50 :y 50))
+
+(defn start-jump [entity]
+  (if (:jump entity)
+    entity
+    (assoc entity :jump 1))
+    )
+
+(defn jump [entity]
+  (if (:jump entity)
+    (do
+        (if (< (:jump entity) 30)
+          (if (< (:jump entity) 16)
+            (move (assoc entity :jump (inc (:jump entity))) :up)
+            (move (assoc entity :jump (inc (:jump entity))) :down))
+          (move (assoc entity :jump nil) :down)
+          )
+        )
+    entity
+    ))
+
 (defscreen main-screen
   :on-show
   (fn [screen entities]
@@ -20,11 +46,10 @@
     (assoc (texture "game_guy1.png")
            :x 50 :y 50 :width 93 :height 215 :direction :right
            ))
-  
   :on-render
   (fn [screen entities]
     (clear!)
-    (render! screen entities))
+    (render! screen (map #(jump %) entities)))
   :on-resize
   (fn [screen entities]
     (height! screen 600))
@@ -33,25 +58,21 @@
     (let [hero (first entities) ]
       (cond
         (= (:key screen) (key-code :h))
-        (assoc hero :x 50 :y 50)
+        (go-home hero)
         (= (:key screen) (key-code :dpad-up))
         (move hero :up)
         (= (:key screen) (key-code :dpad-down))
         (move hero :down)
         (= (:key screen) (key-code :dpad-right))
         (do
-          (when-not (= (:direction hero) :right)
-            (texture! hero :flip true false)
-            )
-          (move hero :right)
-          )
+          (flip hero :right)
+          (move hero :right))
         (= (:key screen) (key-code :dpad-left))
         (do
-          (when-not (= (:direction hero) :left)
-            (texture! hero :flip true false)
-            )
-          (move hero :left)
-          )
+          (flip hero :left)
+          (move hero :left))
+        (= (:key screen) (key-code :j))
+        (start-jump hero)
       ))
     )
   :on-touch-down
