@@ -64,8 +64,8 @@
             :direction :right)
      (assoc (shape :filled
                    :set-color (color :green)
-                   :rect 0 0 10 30)
-            :name "block" :x 10 :y 10)
+                   :rect 0 0 300 20)
+            :name "block" :x 30 :y 35)
      ]
     )
   :on-render
