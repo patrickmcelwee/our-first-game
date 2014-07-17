@@ -6,7 +6,9 @@
 
 (defn flip [entity direction]
  (when-not (= (:direction entity) direction)
-   (texture! entity :flip true false)))
+   (texture! entity :flip true false))
+  entity
+ )
 
 (defn move [entity direction]
   (case direction
@@ -17,8 +19,7 @@
     nil))
 
 (defn move-and-face [entity direction]
- (do (flip entity direction)
-     (move entity direction)))
+  (-> entity (flip direction) (move direction)))
 
 (defn go-home [entity]
   (assoc entity :x 50 :y 50))
@@ -42,12 +43,16 @@
     entity
     ))
 
+(defn- find-by-name [entities a-name]
+  (first (filter #(= (:name %) a-name) entities))
+  )
+
 (defscreen main-screen
   :on-show
   (fn [screen entities]
     (update! screen :renderer (stage) :camera (orthographic))
     (sound "everglade.mp3" :loop)
-    (assoc (texture "game_guy1.png")
+    (assoc (texture "game_guy1.png") :name "hero"
            :x 50 :y 50 :width 93 :height 215 :direction :right
            ))
   :on-render
@@ -59,7 +64,7 @@
     (height! screen 600))
   :on-key-down
   (fn [screen entities]
-    (let [hero (first entities) ]
+    (let [hero (find-by-name entities "hero")]
       (cond
         (= (:key screen) (key-code :h))          (go-home hero)
         (= (:key screen) (key-code :dpad-right)) (move-and-face hero :right)
