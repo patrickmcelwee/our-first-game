@@ -110,3 +110,14 @@
   :on-create
   (fn [this]
     (set-screen! this main-screen)))
+
+(defscreen blank-screen
+  :on-render
+  (fn [screen entities]
+    (clear!)))
+
+(set-screen-wrapper! (fn [screen screen-fn]
+                       (try (screen-fn)
+                            (catch Exception e
+                              (.printStackTrace e)
+                              (set-screen! our-first-game blank-screen)))))
