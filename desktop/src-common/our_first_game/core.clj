@@ -2,7 +2,7 @@
   (:require [play-clj.core :refer :all]
             [play-clj.g2d :refer :all]))
 
-(def speed 8)
+(def base-speed 8)
 
 (defn flip [entity direction]
  (when-not (= (:direction entity) direction)
@@ -10,13 +10,15 @@
   entity
  )
 
-(defn move [entity direction]
-  (case direction
-    :down (assoc entity :y (- (:y entity) speed))
-    :up (assoc entity :y (+ (:y entity) speed))
-    :right (assoc entity :x (+ (:x entity) speed) :direction :right)
-    :left (assoc entity :x (- (:x entity) speed) :direction :left)
-    nil))
+(defn move
+  ([entity direction] (move entity direction base-speed))
+  ([entity direction speed]
+   (case direction
+     :down (assoc entity :y (- (:y entity) speed))
+     :up (assoc entity :y (+ (:y entity) speed))
+     :right (assoc entity :x (+ (:x entity) speed) :direction :right)
+     :left (assoc entity :x (- (:x entity) speed) :direction :left)
+     nil)))
 
 (defn move-and-face [entity direction]
   (-> entity (flip direction) (move direction)))
