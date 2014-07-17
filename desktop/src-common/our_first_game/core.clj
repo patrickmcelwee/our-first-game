@@ -4,6 +4,10 @@
 
 (def speed 8)
 
+(defn flip [entity direction]
+ (when-not (= (:direction entity) direction)
+   (texture! entity :flip true false)))
+
 (defn move [entity direction]
   (case direction
     :down (assoc entity :y (- (:y entity) speed))
@@ -12,9 +16,9 @@
     :left (assoc entity :x (- (:x entity) speed) :direction :left)
     nil))
 
-(defn flip [entity direction]
- (when-not (= (:direction entity) direction)
-   (texture! entity :flip true false)))
+(defn move-and-face [entity direction]
+ (do (flip entity direction)
+     (move entity direction)))
 
 (defn go-home [entity]
   (assoc entity :x 50 :y 50))
@@ -32,7 +36,7 @@
           (if (< (:jump entity) 16)
             (move (assoc entity :jump (inc (:jump entity))) :up)
             (move (assoc entity :jump (inc (:jump entity))) :down))
-          (move (assoc entity :jump nil) :down)
+          (move (dissoc entity :jump) :down)
           )
         )
     entity
@@ -57,32 +61,16 @@
   (fn [screen entities]
     (let [hero (first entities) ]
       (cond
-        (= (:key screen) (key-code :h))
-        (go-home hero)
-        (= (:key screen) (key-code :dpad-up))
-        (move hero :up)
-        (= (:key screen) (key-code :dpad-down))
-        (move hero :down)
-        (= (:key screen) (key-code :dpad-right))
-        (do
-          (flip hero :right)
-          (move hero :right))
-        (= (:key screen) (key-code :dpad-left))
-        (do
-          (flip hero :left)
-          (move hero :left))
-        (= (:key screen) (key-code :j))
-        (start-jump hero)
+        (= (:key screen) (key-code :h))          (go-home hero)
+        (= (:key screen) (key-code :dpad-right)) (move-and-face hero :right)
+        (= (:key screen) (key-code :dpad-left))  (move-and-face hero :left)
+        (= (:key screen) (key-code :j))          (start-jump hero)
       ))
     )
   :on-touch-down
   (fn [screen entities]
     (let [position (input->screen screen (:input-x screen) (:input-y screen))]
       (cond
-        (> (:y position) (* (height screen) (/ 2 3)))
-        (move (first entities) :up)
-        (< (:y position) (/ (height screen) 3))
-        (move (first entities) :down)
         (> (:x position) (* (width screen) (/ 2 3)))
         (move (first entities) :right)
         (< (:x position) (/ (width screen) 3))
