@@ -44,7 +44,9 @@
     ))
 
 (defn- find-by-name [entities a-name]
-  (first (filter #(= (:name %) a-name) entities))
+  (let [entity (first (filter #(= (:name %) a-name) entities))]
+    [entity (.indexOf entities entity)]
+    )
   )
 
 (defscreen main-screen
@@ -52,9 +54,20 @@
   (fn [screen entities]
     (update! screen :renderer (stage) :camera (orthographic))
     (sound "everglade.mp3" :loop)
-    (assoc (texture "game_guy1.png") :name "hero"
-           :x 50 :y 50 :width 93 :height 215 :direction :right
-           ))
+    [
+     (assoc (texture "game_guy1.png")
+            :name "hero"
+            :x 50
+            :y 50
+            :width 93
+            :height 215
+            :direction :right)
+     (assoc (shape :filled
+                   :set-color (color :green)
+                   :rect 0 0 10 30)
+            :name "block" :x 10 :y 10)
+     ]
+    )
   :on-render
   (fn [screen entities]
     (clear!)
@@ -64,23 +77,32 @@
     (height! screen 600))
   :on-key-down
   (fn [screen entities]
-    (let [hero (find-by-name entities "hero")]
-      (cond
-        (= (:key screen) (key-code :h))          (go-home hero)
-        (= (:key screen) (key-code :dpad-right)) (move-and-face hero :right)
-        (= (:key screen) (key-code :dpad-left))  (move-and-face hero :left)
-        (= (:key screen) (key-code :j))          (start-jump hero)
-      ))
+    (let [[hero index] (find-by-name entities "hero")]
+      (assoc entities index
+             (cond
+               (= (:key screen) (key-code :h))
+               (go-home hero)
+               (= (:key screen) (key-code :dpad-right))
+               (move-and-face hero :right)
+               (= (:key screen) (key-code :dpad-left))
+               (move-and-face hero :left)
+               (= (:key screen) (key-code :j))
+               (start-jump hero)
+               :else hero)
+             ))
     )
   :on-touch-down
   (fn [screen entities]
-    (let [position (input->screen screen (:input-x screen) (:input-y screen))]
-      (cond
-        (> (:x position) (* (width screen) (/ 2 3)))
-        (move (first entities) :right)
-        (< (:x position) (/ (width screen) 3))
-        (move (first entities) :left)
-        ))
+    (let [position (input->screen screen (:input-x screen) (:input-y screen))
+          [hero index] (find-by-name entities "hero")]
+      (assoc entities index
+             (cond
+               (> (:x position) (* (width screen) (/ 2 3)))
+               (move-and-face hero :right)
+               (< (:x position) (/ (width screen) 3))
+               (move-and-face hero :left)
+               :else hero))
+      )
     )
   )
 
