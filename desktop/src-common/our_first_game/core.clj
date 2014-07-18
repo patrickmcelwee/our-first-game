@@ -4,21 +4,21 @@
 
 (def base-speed 8)
 
-(defn flip [entity direction]
- (when-not (= (:direction entity) direction)
-   (texture! entity :flip true false))
-  entity
+(defn flip [entity]
+  (let [direction (:direction entity)
+        texture-direction (:texture-direction entity)]
+    (when-not (= direction texture-direction)
+      (texture! entity :flip true false))
+    (assoc entity :texture-direction direction)
+    )
  )
 
-(defn move
-  ([entity direction] (move entity direction base-speed))
-  ([entity direction speed]
-   (case direction
-     :down (assoc entity :y (- (:y entity) speed))
-     :up (assoc entity :y (+ (:y entity) speed))
-     :right (assoc entity :x (+ (:x entity) speed) :direction :right)
-     :left (assoc entity :x (- (:x entity) speed) :direction :left)
-     nil)))
+(defn walk [entity]
+  (if (:walking entity)
+    (case (:direction entity)
+      :right (flip (assoc entity :x (+ (:x entity) base-speed)))
+      :left (flip (assoc entity :x (- (:x entity) base-speed))))
+    entity))
 
 (defn move-and-face [entity direction]
   (-> entity (flip direction) (move direction)))
@@ -26,30 +26,23 @@
 (defn go-home [entity]
   (assoc entity :x 50 :y 50))
 
-(defn start-jump [entity]
-  (if (:jump entity)
-    entity
-    (assoc entity :jump 1))
-    )
+(def max-jump-speed 12.0)
 
-(defn jump [entity]
-  (if (:jump entity)
-    (do
-        (if (< (:jump entity) 30)
-          (if (< (:jump entity) 16)
-            (move (assoc entity :jump (inc (:jump entity))) :up)
-            (move (assoc entity :jump (inc (:jump entity))) :down))
-          (move (dissoc entity :jump) :down)
-          )
-        )
+(defn start-jump [entity]
+  (assoc entity :y-velocity max-jump-speed))
+
+(defn gravity [entity]
+  (if (:static entity)
     entity
-    ))
+    (if (and (<= (:y entity) 0) (<= (:y-velocity entity) 0))
+      (assoc entity :y 0 :y-velocity 0)
+      (assoc entity
+             :y (+ (:y entity) (:y-velocity entity))
+             :y-velocity (- (:y-velocity entity) 0.5)))))
 
 (defn- find-by-name [entities a-name]
   (let [entity (first (filter #(= (:name %) a-name) entities))]
-    [entity (.indexOf entities entity)]
-    )
-  )
+    [entity (.indexOf entities entity)]))
 
 (defscreen main-screen
   :on-show
@@ -63,17 +56,19 @@
             :y 50
             :width 93
             :height 215
+            :y-velocity 0
+            :texture-direction :right
             :direction :right)
      (assoc (shape :filled
                    :set-color (color :green)
                    :rect 0 0 300 20)
-            :name "block" :x 30 :y 35)
+            :name "block" :x 30 :y 35 :static true)
      ]
     )
   :on-render
   (fn [screen entities]
     (clear!)
-    (render! screen (map #(jump %) entities)))
+    (render! screen (map #(-> % walk gravity) entities)))
   :on-resize
   (fn [screen entities]
     (height! screen 600))
@@ -85,11 +80,22 @@
                (= (:key screen) (key-code :h))
                (go-home hero)
                (= (:key screen) (key-code :dpad-right))
-               (move-and-face hero :right)
+               (assoc hero :walking true :direction :right)
                (= (:key screen) (key-code :dpad-left))
-               (move-and-face hero :left)
+               (assoc hero :walking true :direction :left)
                (= (:key screen) (key-code :j))
                (start-jump hero)
+               :else hero)
+             ))
+    )
+  :on-key-up
+  (fn [screen entities]
+    (let [[hero index] (find-by-name entities "hero")]
+      (assoc entities index
+             (cond
+               (or (= (:key screen) (key-code :dpad-right))
+                   (= (:key screen) (key-code :dpad-left)))
+               (dissoc hero :walking)
                :else hero)
              ))
     )
